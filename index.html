@@ -60,13 +60,15 @@
                 </button>
             </div>
 
-            <div style="display: flex; gap: 10px;">
-                <button onclick="window.toggleGameViewport()" style="background:transparent; color:var(--primary); border:1px solid var(--primary); padding:5px 10px; font-weight:bold; cursor:pointer; font-family:'JetBrains Mono'; border-radius:3px; transition: 0.2s;">🎮 ABRIR JOGO</button>
-                <button onclick="window.exportarApenasBank()" style="background:var(--primary); color:#000; border:none; padding:5px 10px; font-weight:bold; cursor:pointer; font-family:'JetBrains Mono'; border-radius:3px;"" class="btn-hb-secondary" title="Exporta apenas os Eventos">
-                   [↓] EXPORTAR BANK
+            <div style="display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                <button id="btn_play_preview" onclick="window.togglePlayPreview()" style="flex: 1; padding: 12px; background: #1a1a20; color: var(--primary); border: 1px solid #333; font-family: 'Inter', sans-serif; font-weight: bold; border-radius: 2px; cursor: pointer; transition: 0.2s;">
+                    🎧 PREVIEW LOCAL
                 </button>
-                <button onclick="window.exportarApenasMixer()" style="background:var(--primary); color:#000; border:none; padding:5px 10px; font-weight:bold; cursor:pointer; font-family:'JetBrains Mono'; border-radius:3px;"" class="btn-hb-secondary" title="Exporta apenas o Mixer/Rack">
-                   [↓] EXPORTAR MIXER
+                <button onclick="window.testarNoGodot()" style="flex: 1; padding: 12px; background: var(--primary); color: #000; font-weight: 900; font-family: 'Inter', sans-serif; cursor: pointer; border: none; border-radius: 2px; box-shadow: 0 5px 15px rgba(0, 242, 255, 0.15); transition: 0.2s;">
+                    🚀 PLAY NA ENGINE
+                </button>
+                <button onclick="window.pararTudoHeartBeat()" style="flex: 0.4; padding: 12px; background: #2a1111; color: var(--danger); font-weight: bold; font-family: 'Inter', sans-serif; cursor: pointer; border: 1px solid var(--danger); border-radius: 2px; transition: 0.2s;" title="Parar tudo">
+                    🛑 STOP
                 </button>
             </div>
         </div>

@@ -1,298 +1,149 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
 
 :root {
-    --primary: #81fe4e;
-    --bg-dark: #0f0f13;
-    --panel-bg: #1a1a20;
-    --border-color: #2a2a32;
+    /* 🚨 Base Puxada do PixaKey para manter identidade visual */
+    --primary: #00f2ff;       /* Transformamos o verde em Ciano PixaKey */
+    --bg-dark: #0a0a0c;       /* Fundo ultra escuro */
+    --panel-bg: #16161a;      /* Painéis secundários */
+    --border-color: #2d2d33;  /* Bordas mais técnicas */
+    --text-main: #d1d1d1;
+    --text-dim: #707075;
     --danger: #ff5252;
 }
 
 body {
     background-color: var(--bg-dark);
-    color: #ccc;
-    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-main);
+    font-family: 'Inter', 'Segoe UI', Helvetica, sans-serif;
     margin: 0;
     padding: 20px;
     display: flex;
     gap: 20px;
     height: 100vh;
     box-sizing: border-box;
+    font-size: 12px;
 }
 
-/* PAINÉIS GERAIS */
+/* PAINÉIS GERAIS (ESTILO PIXAKEY) */
 .panel {
     background: var(--panel-bg);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.05);
+    border-radius: 4px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
 .panel-header {
-    background: #23232b;
-    padding: 15px;
-    border-bottom: 2px solid var(--primary);
-    font-size: 0.8rem;
+    background: #050505;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 11px;
     font-weight: 800;
-    color: var(--primary);
+    color: var(--text-dim);
     letter-spacing: 1px;
     text-transform: uppercase;
 }
 
+/* INPUTS TECNICOS */
+input[type="text"], select, input[type="number"], textarea {
+    background: #0f0f12; border: 1px solid var(--border-color); color: var(--primary);
+    font-family: 'Inter', sans-serif; padding: 8px 10px; border-radius: 2px; font-size: 11px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); outline: none; transition: 0.2s; box-sizing: border-box;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+
+/* BOTOES ESTILO ACTION-BTN (PIXAKEY) */
+.btn-micro, .btn-hb-secondary {
+    background: #25252b; color: #ccc; border: 1px solid #3d3d45;
+    padding: 6px 10px; cursor: pointer; border-radius: 2px;
+    font-size: 10px; transition: 0.2s; text-transform: uppercase;
+    font-family: 'Inter', sans-serif; white-space: nowrap;
+}
+.btn-micro:hover, .btn-hb-secondary:hover { background: #3d3d45; border-color: var(--primary); color: white; }
+
+.btn-delete {
+    background: transparent; color: var(--danger); border: 1px solid var(--danger);
+    padding: 8px; cursor: pointer; border-radius: 2px; font-family: 'Inter', sans-serif;
+    margin-top: 10px; transition: 0.2s; font-size: 10px; text-transform: uppercase;
+}
+.btn-delete:hover { background: rgba(255, 82, 82, 0.1); }
+
 /* ==========================================
-    1. SIDEBAR E EVENT EXPLORER (UX PREMIUM)
-   ========================================== */
-.sidebar { width: 200px; display: flex; flex-direction: column; }
+ 1 . SIDEBAR E EVENT EXPLORER                 *
+ ========================================== */
+.sidebar { width: 220px; display: flex; flex-direction: column; }
 
-.event-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px; /* Itens mais próximos como numa lista de ficheiros real */
-}
+.event-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
 
-/* Estilo Base dos Itens (Pastas e Eventos) */
 .wiki-node-item, .wiki-root-node {
-    padding: 8px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.15s ease-out;
-    border: 1px solid transparent;
-    display: flex;
-    align-items: center;
-    color: #aaa;
-    user-select: none; /* Evita selecionar o texto ao clicar rápido */
+    padding: 8px 10px; border-radius: 2px; cursor: pointer; transition: all 0.15s ease-out;
+    border: 1px solid transparent; display: flex; align-items: center; color: #aaa; user-select: none;
+    background: #1c1c22; margin-bottom: 2px;
 }
+.wiki-node-item:hover, .wiki-root-node:hover { background: #25252b; color: #fff; }
 
-/* Hover Suave: Acende o fundo e o texto */
-.wiki-node-item:hover, .wiki-root-node:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
-}
-
-/* Estado Ativo (O evento ou pasta selecionada no momento) */
 .wiki-file-item.active, .wiki-folder-header.selected, .wiki-root-node.selected {
-    background: rgba(129, 254, 78, 0.08); /* Fundo com tom do seu verde primary */
-    border-color: rgba(129, 254, 78, 0.2);
-    color: #fff;
-    box-shadow: inset 3px 0 0 var(--primary); /* A marcante barra lateral verde */
+    background: rgba(0, 242, 255, 0.1); border-color: var(--primary); color: #fff;
 }
 
-/* Textos e Ícones dentro da lista */
-.wiki-item-name {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
+.wiki-item-name { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 11px; font-weight: 500; }
+.bus-tag { font-size: 9px; color: #888; background: #111; padding: 3px 6px; border-radius: 2px; border: 1px solid #333; transition: 0.2s; text-transform: uppercase; }
+.wiki-file-item.active .bus-tag { color: var(--primary); border-color: var(--primary); background: rgba(0,0,0,0.5); }
 
-/* A tagzinha cinza com a sigla do BUS à direita */
-.bus-tag {
-    font-size: 0.55rem;
-    color: #888;
-    background: #111;
-    padding: 3px 6px;
-    border-radius: 4px;
-    border: 1px solid #333;
-    transition: 0.2s;
-}
-.wiki-file-item.active .bus-tag {
-    color: var(--primary);
-    border-color: var(--primary);
-    background: rgba(0,0,0,0.5);
-}
+.item-apagado { opacity: 0.5; filter: grayscale(1); }
+.item-apagado:hover { opacity: 0.8; }
 
-/* Itens apagados (Lixeira) */
-.item-apagado {
-    opacity: 0.5;
-    filter: grayscale(1);
-}
-.item-apagado:hover {
-    opacity: 0.8;
-}
+#hb-search-input, #hb-sort-select { font-size: 11px; padding: 8px 10px; }
 
-/* Campos de Busca e Filtro mais elegantes */
-#hb-search-input, #hb-sort-select {
-    background: #09090b;
-    border: 1px solid #2a2a32;
-    color: #fff;
-    padding: 10px 12px;
-    border-radius: 4px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    transition: 0.2s;
-}
-#hb-search-input:focus, #hb-sort-select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 8px rgba(129, 254, 78, 0.2);
-    outline: none;
-}
-
-/* Efeitos Visuais Dinâmicos para Drag & Drop (Arrastar Pastas) */
-.wiki-drop-inside {
-    background: rgba(129, 254, 78, 0.15) !important;
-    border: 1px dashed var(--primary) !important;
-    transform: scale(0.98);
-}
-.wiki-drop-above {
-    border-top: 2px solid var(--primary) !important;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-}
-.wiki-drop-below {
-    border-bottom: 2px solid var(--primary) !important;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
+/* Drag & Drop Effects */
+.wiki-drop-inside { background: rgba(0, 242, 255, 0.15) !important; border: 1px dashed var(--primary) !important; transform: scale(0.98); }
+.wiki-drop-above { border-top: 2px solid var(--primary) !important; border-top-left-radius: 0; border-top-right-radius: 0; }
+.wiki-drop-below { border-bottom: 2px solid var(--primary) !important; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 
 /* 2. EDITOR CENTRAL */
 .editor { flex: 2; padding-bottom: 0; }
 .editor-content { padding: 10px; overflow-y: auto; flex: 1; }
 
-.form-group { margin-bottom: 25px; display: flex; flex-direction: column; gap: 8px; }
-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-
-input[type="text"], select, input[type="number"], textarea {
-    background: #09090b; border: 1px solid var(--border-color); color: var(--primary);
-    font-family: 'JetBrains Mono', monospace; padding: 12px; border-radius: 4px; font-size: 0.9rem;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.8); outline: none; transition: 0.2s;
-}
-input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+.form-group { margin-bottom: 20px; display: flex; flex-direction: column; gap: 6px; }
+label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
 
 .row { display: flex; gap: 15px; }
 .col { flex: 1; }
 
-.btn-delete {
-    background: transparent; color: var(--danger); border: 1px solid var(--danger);
-    padding: 10px; cursor: pointer; border-radius: 4px; font-family: 'JetBrains Mono', monospace;
-    margin-top: 10px; transition: 0.2s;
-}
-.btn-delete:hover { background: rgba(255, 82, 82, 0.1); }
-
 /* 3. TELA DE SAÍDA (JSON) */
-.output { width: 200px; background: #050506; border: 1px solid #111; }
-pre { color: var(--primary); font-size: 0.7rem; text-shadow: 0 0 5px rgba(129, 254, 78, 0.3); padding: 15px; margin: 0; white-space: pre-wrap; overflow-y: auto; flex: 1; }
+.output { width: 200px; background: #050505; border: 1px solid var(--border-color); }
+pre { color: var(--primary); font-size: 10px; padding: 15px; margin: 0; white-space: pre-wrap; overflow-y: auto; flex: 1; font-family: 'JetBrains Mono', monospace;}
 
-/* ==========================================
-    MENU DE CONTEXTO (RIGHT-CLICK)
-   ========================================== */
+/* MENU DE CONTEXTO (RIGHT-CLICK) */
 #context-menu {
-    display: none;
-    position: absolute;
-    background: #111115;
-    border: 1px solid #333;
-    border-radius: 4px;
-    box-shadow: 0 5px 25px rgba(0,0,0,0.9);
-    z-index: 9999;
-    min-width: 160px;
-    padding: 6px;
-    font-family: 'JetBrains Mono', monospace;
+display: none; position: absolute; background: var(--panel-bg); border: 1px solid var(--primary);
+border-radius: 4px; box-shadow: 0 5px 25px rgba(0,0,0,0.9); z-index: 9999; min-width: 160px; padding: 6px; font-family: 'Inter', sans-serif;
 }
+.context-menu-item { padding: 10px 12px; font-size: 11px; color: #ccc; cursor: pointer; display: flex; align-items: center; gap: 10px; border-radius: 2px; transition: 0.1s ease-out; }
+.context-menu-item:hover { background: var(--primary); color: #000; font-weight: bold; }
+.context-menu-item.danger:hover { background: var(--danger); color: #fff; }
 
-.context-menu-item {
-    padding: 10px 12px;
-    font-size: 0.75rem;
-    color: #ccc;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border-radius: 3px;
-    transition: 0.1s ease-out;
-}
-
-.context-menu-item:hover {
-    background: var(--primary);
-    color: #000;
-    font-weight: bold;
-}
-
-.context-menu-item.danger:hover {
-    background: var(--danger);
-    color: #fff;
-}
-
-/* ==========================================
-    ESTILOS DO INSPECTOR (GRID E CARDS)
-   ========================================== */
+/* ESTILOS DO INSPECTOR */
 .settings-panel {
-    background: #111115;
-    border: 1px solid #222228;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: inset 0 1px 3px rgba(255,255,255,0.02), 0 5px 15px rgba(0,0,0,0.3);
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+    background: #111115; border: 1px solid #222228; border-radius: 4px; padding: 20px;
+    box-shadow: inset 0 1px 3px rgba(255,255,255,0.02), 0 5px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 15px;
 }
-
 .panel-section-title {
-    color: var(--primary);
-    font-size: 0.65rem;
-    font-weight: 900;
-    letter-spacing: 1.5px;
-    border-bottom: 1px solid #333;
-    padding-bottom: 8px;
-    margin-bottom: 5px;
-    text-transform: uppercase;
+    color: var(--primary); font-size: 10px; font-weight: 900; letter-spacing: 1.5px;
+    border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 5px; text-transform: uppercase;
 }
 
-.btn-micro {
-    background: #222;
-    color: #aaa;
-    border: 1px solid #444;
-    padding: 4px 8px;
-    font-size: 0.55rem;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: 0.2s;
-    font-family: 'JetBrains Mono', monospace;
-}
-.btn-micro:hover { background: #444; color: #fff; }
+/* Faders Horizontais */
+input[type=range].horizontal-fader { -webkit-appearance: none; width: 100%; height: 4px; background: #333; border-radius: 2px; outline: none; margin-top: 5px; border: none; }
+input[type=range].horizontal-fader::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 5px var(--primary); cursor: pointer; }
 
-/* Faders Horizontais Bonitos (Volume e Pan) */
-input[type=range].horizontal-fader {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 6px;
-    background: #050506;
-    border: 1px solid #333;
-    border-radius: 3px;
-    outline: none;
-    margin-top: 5px;
-}
-input[type=range].horizontal-fader::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #666;
-    border: 2px solid #aaa;
-    box-shadow: 0 0 5px rgba(0,0,0,0.8);
-    cursor: ew-resize;
-}
-input[type=range].horizontal-fader:focus::-webkit-slider-thumb,
-input[type=range].horizontal-fader:hover::-webkit-slider-thumb {
-    background: var(--primary);
-    border-color: #fff;
-    box-shadow: 0 0 10px var(--primary);
-}
-input[type=range].pan-fader:focus::-webkit-slider-thumb,
-input[type=range].pan-fader:hover::-webkit-slider-thumb {
-    background: #4eb5fe;
-    box-shadow: 0 0 10px #4eb5fe;
-}
-
+/* ... MANTENHA A PARTIR DAQUI O SEU CSS DOS RACKS E DO CLIPS BUILDER INTACTOS ... */
 /* ==========================================
-    ESTILOS DO EURORACK (ESCALA COMPACTA DEFINITIVA)
-   ========================================== */
+ E STILOS DO EURORACK (ESCALA COMPACTA DEFINIT*IVA)
+ ========================================== */
 
 /* A Caixa de Madeira Eurorack (Case) - Em Andares e Mais Baixa */
 .rack-case {
