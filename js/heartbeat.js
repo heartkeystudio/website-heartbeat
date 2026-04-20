@@ -555,9 +555,16 @@ window.uploadArquivoHB = (input) => {
                 labelBtn.innerText = "✅ SUCESSO!";
                 labelBtn.style.color = "var(--primary)";
 
-                // Força atualização da lista de arquivos logo após
-                if (modo === "ws") window.wsHeartBeat.send(JSON.stringify({ type: "request_files" }));
-                else window.HeartBeatAPI.sendToGodot("request_files", {});
+                // Força atualização da lista com blindagem contra queda de conexão
+                try {
+                    if (modo === "ws" && window.wsHeartBeat && window.wsHeartBeat.readyState === WebSocket.OPEN) {
+                        window.wsHeartBeat.send(JSON.stringify({ type: "request_files" }));
+                    } else if (modo === "js" && window.HeartBeatAPI) {
+                        window.HeartBeatAPI.sendToGodot("request_files", {});
+                    }
+                } catch(e) {
+                    console.warn("Upload falhou ou conexão caiu antes de atualizar a lista.", e);
+                }
 
                 setTimeout(restaurarBotao, 2000);
             }, 500);
@@ -566,7 +573,7 @@ window.uploadArquivoHB = (input) => {
         function restaurarBotao() {
             labelBtn.innerHTML = originalText;
             labelBtn.style.opacity = "1";
-            labelBtn.style.color = ""; // Reseta cor pro padrão
+            labelBtn.style.color = "";
         }
     };
     reader.readAsDataURL(file);
