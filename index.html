@@ -61,11 +61,8 @@
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-                <button id="btn_play_preview" onclick="window.togglePlayPreview()" style="flex: 1; padding: 12px; background: #1a1a20; color: var(--primary); border: 1px solid #333; font-family: 'Inter', sans-serif; font-weight: bold; border-radius: 2px; cursor: pointer; transition: 0.2s;">
-                    🎧 PREVIEW LOCAL
-                </button>
                 <button onclick="window.testarNoGodot()" style="flex: 1; padding: 12px; background: var(--primary); color: #000; font-weight: 900; font-family: 'Inter', sans-serif; cursor: pointer; border: none; border-radius: 2px; box-shadow: 0 5px 15px rgba(0, 242, 255, 0.15); transition: 0.2s;">
-                    🚀 PLAY NA ENGINE
+                    🚀 PLAY
                 </button>
                 <button onclick="window.pararTudoHeartBeat()" style="flex: 0.4; padding: 12px; background: #2a1111; color: var(--danger); font-weight: bold; font-family: 'Inter', sans-serif; cursor: pointer; border: 1px solid var(--danger); border-radius: 2px; transition: 0.2s;" title="Parar tudo">
                     🛑 STOP
@@ -141,6 +138,7 @@
                     </div>
 
                     <div class="panel-section-title" style="margin-top: 15px;">MIXAGEM BÁSICA</div>
+                    
                     <div class="row">
                         <div class="form-group col" style="margin-bottom: 0;">
                             <label>VOLUME <span id="vol_val" style="color:var(--primary); float:right;">0.0 dB</span></label>
@@ -149,6 +147,16 @@
                         <div class="form-group col" style="margin-bottom: 0;">
                             <label>PAN (L/R) <span id="pan_val" style="color:#4eb5fe; float:right;">C</span></label>
                             <input type="range" class="horizontal-fader pan-fader" id="ev_pan" min="-1" max="1" step="0.1" value="0" oninput="document.getElementById('pan_val').innerText = this.value == 0 ? 'C' : (this.value < 0 ? 'L '+Math.abs(this.value) : 'R '+this.value); window.salvarAlteracoesHeartBeat()">
+                        </div>
+                    </div>
+                    <div class="panel-section-title" style="margin-top: 25px; color: #ffeb3b;">⚙️ AUTOMAÇÃO (AO TOCAR)</div>
+
+                    <div class="row">
+                        <div class="form-group col" style="margin-bottom: 0;">
+                            <label>DISPARAR MACRO / TRILHA</label>
+                            <select id="ev_linked_macro" onchange="window.salvarAlteracoesHeartBeat()" style="border-color: #ffeb3b;">
+                                <option value="none">Nenhum</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -204,13 +212,6 @@
                             
                             <div id="audio_elements_container" style="display:none;"></div>
                         </div>
-                    </div> <div style="display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #222;">
-                        <button id="btn_play_preview" onclick="window.togglePlayPreview()" style="flex: 1; padding: 12px; background: #1a1a20; color: var(--primary); border: 1px solid #333; font-family: 'JetBrains Mono'; font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.2s;">
-                            🎧 PREVIEW LOCAL
-                        </button>
-                        <button onclick="window.testarNoGodot()" style="flex: 1; padding: 12px; background: var(--primary); color: #000; font-weight: 900; font-family: 'JetBrains Mono'; cursor: pointer; border: none; border-radius: 4px; box-shadow: 0 5px 15px rgba(129, 254, 78, 0.2); transition: 0.2s;">
-                            🚀 PLAY NA ENGINE
-                        </button>
                     </div>
 
                 </div>
@@ -243,41 +244,27 @@
                     </div>
                 </div>
 
-                <div class="module mod-std brand-alum">
-                    <div class="screw tl"></div><div class="screw tr"></div>
-                    <div class="screw bl"></div><div class="screw br"></div>
-                    <div class="module-title">REVERB</div>
-                    <div style="margin-bottom: 10px; font-size: 0.6rem; color: #ff5252; text-align: center;">
-                        <label style="cursor: pointer;"><input type="checkbox" data-bypass="reverb" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
-                    </div>
-                    
-                    <div class="label">TIME</div>
-                    <div class="knob-bg">
-                        <div class="knob knob-inst knob-chicken" data-module="reverb" data-param="time" data-value="0.5"></div>
-                    </div>
-                    <div class="label">DAMP</div>
-                    <div class="knob-bg">
-                        <div class="knob knob-inst" data-module="reverb" data-param="damp" data-value="0.2"></div>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_reverb_in"></div><div class="jack" id="jack_reverb_out"></div></div>
-                    <div style="font-size: 0.5rem; color: #333; margin-top: 5px;">SERIAL NO. #001</div>
-                </div>
-
                 <div class="module mod-std brand-milit">
                     <div class="screw tl"></div><div class="screw tr"></div>
                     <div class="screw bl"></div><div class="screw br"></div>
                     <div class="module-title">DELAY</div>
-                    <div style="margin-bottom: 10px; font-size: 0.6rem; color: #ff5252; text-align: center;">
+                    <div style="margin-bottom: 10px; font-size: 9px; color: #ff5252; text-align: center;">
                         <label style="cursor: pointer;"><input type="checkbox" data-bypass="delay" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
                     </div>
                     
-                    <div class="label">FEEDBACK</div>
-                    <div class="knob-bg">
-                        <div class="knob knob-inst" data-module="delay" data-param="feedback" data-value="0.5"></div>
-                    </div>
-                    <div class="label">TIME</div>
-                    <div class="knob-bg">
-                        <div class="knob knob-inst" data-module="delay" data-param="time" data-value="0.2"></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-items: center; width: 100%;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">TIME</div><div class="knob-bg"><div class="knob knob-inst" data-module="delay" data-param="time" data-value="0.3"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">FDBK</div><div class="knob-bg"><div class="knob knob-inst" data-module="delay" data-param="fdbk" data-value="0.4"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">FILTER</div><div class="knob-bg"><div class="knob knob-inst" data-module="delay" data-param="filter" data-value="0.2"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">MIX</div><div class="knob-bg"><div class="knob knob-inst" data-module="delay" data-param="mix" data-value="0.5"></div></div>
+                        </div>
                     </div>
                     <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_delay_in"></div><div class="jack" id="jack_delay_out"></div></div>
                 </div>
@@ -305,27 +292,61 @@
                     <div class="screw tl"></div><div class="screw tr"></div>
                     <div class="screw bl"></div><div class="screw br"></div>
                     <div class="module-title">COMPRESSOR</div>
-                    <div style="margin-bottom: 10px; font-size: 0.6rem; color: #ff5252; text-align: center;">
-                        <label style="cursor: pointer;"><input type="checkbox" data-bypass="compress" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
+                    <div style="margin-bottom: 10px; font-size: 9px; color: #ff5252; text-align: center;">
+                        <label style="cursor: pointer;"><input type="checkbox" data-bypass="compressor" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
                     </div>
 
-                    <div style="display: flex; gap: 20px; align-items: center; justify-content: space-around; width: 100%;">
-                        <div style="width: 60px; height: 60px; background: #000; border: 2px solid #555; border-radius: 4px; box-shadow: inset 0 2px 5px rgba(0,0,0,1);">
-                            <div style="width: 2px; height: 100%; background: #ff5252; margin: 0 auto; box-shadow: 0 0 10px #ff5252;"></div>
+                    <div style="display: flex; gap: 15px; align-items: center; justify-content: space-around; width: 100%;">
+                        <div style="width: 70px; height: 50px; background: #000; border: 2px solid #555; border-radius: 4px; position: relative; overflow: hidden; box-shadow: inset 0 2px 5px #000; flex-shrink: 0;">
+                            <div style="position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 8px; color: #ff5252; font-weight: bold;">GAIN REDUCTION</div>
+                            <div id="comp_needle" style="position: absolute; bottom: -10px; left: 50%; width: 2px; height: 45px; background: #ff5252; transform-origin: bottom center; transform: rotate(-60deg); transition: transform 0.1s; box-shadow: 0 0 5px #ff5252;"></div>
                         </div>
                         
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <div class="label">THRESH</div>
-                            <div class="knob-bg">
-                                <div class="knob knob-inst" data-module="compressor" data-param="thresh" data-value="1.0"></div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-items: center; width: 100%;">
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <div class="label">THRESH</div><div class="knob-bg"><div class="knob knob-inst" data-module="compressor" data-param="thresh" data-value="1.0"></div></div>
                             </div>
-                            <div class="label">RATIO</div>
-                            <div class="knob-bg">
-                                <div class="knob knob-inst" data-module="compressor" data-param="ratio" data-value="0.2"></div>
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <div class="label">RATIO</div><div class="knob-bg"><div class="knob knob-inst" data-module="compressor" data-param="ratio" data-value="0.3"></div></div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <div class="label">ATTACK</div><div class="knob-bg"><div class="knob knob-inst" data-module="compressor" data-param="attack" data-value="0.1"></div></div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <div class="label">GAIN</div><div class="knob-bg"><div class="knob knob-inst" data-module="compressor" data-param="gain" data-value="0.0"></div></div>
                             </div>
                         </div>
                     </div>
                     <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_compressor_in"></div><div class="jack" id="jack_compressor_out"></div></div>
+                </div>
+
+                <div class="module mod-std brand-yellow">
+                    <div class="screw tl"></div><div class="screw tr"></div>
+                    <div class="screw bl"></div><div class="screw br"></div>
+                    <div class="module-title" style="color: #000;">WAH-WAH</div>
+                    <div style="margin-bottom: 10px; font-size: 9px; color: #000; text-align: center;">
+                        <label style="cursor: pointer;"><input type="checkbox" data-bypass="wah" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
+                    </div>
+                    
+                    <div class="label" style="color: #000;">FREQ</div>
+                    <div class="knob-bg" style="background: #222;"><div class="knob knob-inst" data-module="wah" data-param="freq" data-value="0.3"></div></div>
+                    <div class="label" style="color: #000;">RESO</div>
+                    <div class="knob-bg" style="background: #222;"><div class="knob knob-inst" data-module="wah" data-param="reso" data-value="0.5"></div></div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_wah_in"></div><div class="jack" id="jack_wah_out"></div></div>
+                </div>
+
+                <div class="module mod-slim brand-rust">
+                    <div class="screw tl"></div><div class="screw tr"></div>
+                    <div class="screw bl"></div><div class="screw br"></div>
+                    <div class="module-title" style="font-style: italic;">OVERDRIVE</div>
+                    
+                    <div class="label">DRIVE</div>
+                    <div class="knob-bg"><div class="knob knob-inst" data-module="overdrive" data-param="drive" data-value="0.4"></div></div>
+                    <div class="label">TONE</div>
+                    <div class="knob-bg"><div class="knob knob-inst" data-module="overdrive" data-param="tone" data-value="0.5"></div></div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_overdrive_in"></div><div class="jack" id="jack_overdrive_out"></div></div>
                 </div>
 
                 <div class="module mod-wide brand-alum">
@@ -369,17 +390,23 @@
                     <div class="screw tl"></div><div class="screw tr"></div>
                     <div class="screw bl"></div><div class="screw br"></div>
                     <div class="module-title" style="color: #e04efe;">FLANGER</div>
-                    <div style="margin-bottom: 10px; font-size: 0.6rem; color: #ff5252; text-align: center;">
+                    <div style="margin-bottom: 10px; font-size: 9px; color: #ff5252; text-align: center;">
                         <label style="cursor: pointer;"><input type="checkbox" data-bypass="flanger" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
                     </div>
 
-                    <div class="label">DEPTH</div>
-                    <div class="knob-bg">
-                        <div class="knob knob-inst" data-module="flanger" data-param="depth" data-value="0.6"></div>
-                    </div>
-                    <div class="label">FDBK</div>
-                    <div class="knob-bg">
-                        <div class="knob knob-inst" data-module="flanger" data-param="feedback" data-value="0.4"></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-items: center; width: 100%;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">RATE</div><div class="knob-bg"><div class="knob knob-inst" data-module="flanger" data-param="rate" data-value="0.2"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">DEPTH</div><div class="knob-bg"><div class="knob knob-inst" data-module="flanger" data-param="depth" data-value="0.6"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">FDBK</div><div class="knob-bg"><div class="knob knob-inst" data-module="flanger" data-param="feedback" data-value="0.4"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">MIX</div><div class="knob-bg"><div class="knob knob-inst" data-module="flanger" data-param="mix" data-value="0.8"></div></div>
+                        </div>
                     </div>
                     <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_flanger_in"></div><div class="jack" id="jack_flanger_out"></div></div>
                 </div>
@@ -403,6 +430,49 @@
                     <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_pitch_in"></div><div class="jack" id="jack_pitch_out"></div></div>
                 </div>
 
+                <div class="module mod-slim brand-rust">
+                    <div class="screw tl"></div><div class="screw tr"></div>
+                    <div class="screw bl"></div><div class="screw br"></div>
+                    <div class="module-title" style="color: #00f2ff;">BIT CRUSH</div>
+                    <div style="margin-bottom: 10px; font-size: 9px; color: var(--danger); text-align: center;">
+                        <label style="cursor: pointer;"><input type="checkbox" data-bypass="bitcrush" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
+                    </div>
+
+                    <div class="label">CRUSH</div>
+                    <div class="knob-bg">
+                        <div class="knob knob-inst" data-module="bitcrush" data-param="crush" data-value="0.5"></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_bitcrush_in"></div><div class="jack" id="jack_bitcrush_out"></div></div>
+                </div>
+
+                <div class="module mod-std brand-alum">
+                    <div class="screw tl"></div><div class="screw tr"></div>
+                    <div class="screw bl"></div><div class="screw br"></div>
+                    <div class="module-title">GHOST LFO</div>
+                    
+                    <select id="lfo_target" style="width: 90%; font-size: 9px; padding: 2px; margin-bottom: 10px; background: #000; border: 1px solid #444;" onchange="window.salvarLfoModulator()">
+                        <option value="none">Off</option>
+                        <option value="tremolo_music">Tremolo (Music)</option>
+                        <option value="vibrato_sfx">Vibrato (SFX)</option>
+                    </select>
+
+                    <select id="lfo_wave" style="width: 90%; font-size: 9px; padding: 2px; margin-bottom: 10px; background: #000; border: 1px solid #444; color: var(--primary);" onchange="window.salvarLfoModulator()">
+                        <option value="sine">〰️ Senóide</option>
+                        <option value="random">🎲 Random (S&H)</option>
+                    </select>
+
+                    <div style="display: flex; gap: 10px;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">RATE</div>
+                            <input type="range" id="lfo_rate" min="0.1" max="20.0" step="0.1" value="1.0" class="eurorack-fader" style="height: 60px;" oninput="window.salvarLfoModulator()">
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">DEPTH</div>
+                            <input type="range" id="lfo_depth" min="0.0" max="1.0" step="0.01" value="0.5" class="eurorack-fader" style="height: 60px;" oninput="window.salvarLfoModulator()">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="module mod-wide">
                     <div class="screw tl"></div><div class="screw tr"></div>
                     <div class="screw bl"></div><div class="screw br"></div>
@@ -418,25 +488,191 @@
                     <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_eq6_in"></div><div class="jack" id="jack_eq6_out"></div></div>
                 </div>
 
-                <div class="module mod-double brand-milit" style="display: flex; align-items: center; justify-content: space-between; padding: 15px 25px; border: 2px dashed #81fe4e; flex-direction: row; margin-bottom: 25px;">
+                <div class="module mod-std brand-alum">
+                    <div class="screw tl"></div><div class="screw tr"></div>
+                    <div class="screw bl"></div><div class="screw br"></div>
+                    <div class="module-title">REVERB</div>
+                    <div style="margin-bottom: 10px; font-size: 9px; color: #ff5252; text-align: center;">
+                        <label style="cursor: pointer;"><input type="checkbox" data-bypass="reverb" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-items: center; width: 100%;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">TIME</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb" data-param="time" data-value="0.5"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">DAMP</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb" data-param="damp" data-value="0.2"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">SPREAD</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb" data-param="spread" data-value="0.8"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">MIX</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb" data-param="mix" data-value="0.4"></div></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_reverb_in"></div><div class="jack" id="jack_reverb_out"></div></div>
+                </div>
+
+                <div class="module mod-std brand-alum">
+                    <div class="screw tl"></div><div class="screw tr"></div>
+                    <div class="screw bl"></div><div class="screw br"></div>
+                    <div class="module-title" style="color: #00f2ff;">REVERB 2</div>
+                    <div style="margin-bottom: 10px; font-size: 9px; color: #ff5252; text-align: center;">
+                        <label style="cursor: pointer;"><input type="checkbox" data-bypass="reverb_2" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-items: center; width: 100%;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">TIME</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_2" data-param="time" data-value="0.5"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">DAMP</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_2" data-param="damp" data-value="0.2"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">SPREAD</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_2" data-param="spread" data-value="0.8"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">MIX</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_2" data-param="mix" data-value="0.4"></div></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_reverb_2_in"></div><div class="jack" id="jack_reverb_2_out"></div></div>
+                </div>
+
+                <div class="module mod-std brand-alum">
+                    <div class="screw tl"></div><div class="screw tr"></div>
+                    <div class="screw bl"></div><div class="screw br"></div>
+                    <div class="module-title" style="color: #00f2ff;">REVERB 3</div>
+                    <div style="margin-bottom: 10px; font-size: 9px; color: #ff5252; text-align: center;">
+                        <label style="cursor: pointer;"><input type="checkbox" data-bypass="reverb_2" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-items: center; width: 100%;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">TIME</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_3" data-param="time" data-value="0.5"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">DAMP</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_3" data-param="damp" data-value="0.2"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">SPREAD</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_3" data-param="spread" data-value="0.8"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">MIX</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_3" data-param="mix" data-value="0.4"></div></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_reverb_3_in"></div><div class="jack" id="jack_reverb_3_out"></div></div>
+                </div>
+
+                <div class="module mod-std brand-alum">
+                    <div class="screw tl"></div><div class="screw tr"></div>
+                    <div class="screw bl"></div><div class="screw br"></div>
+                    <div class="module-title" style="color: #00f2ff;">REVERB 4</div>
+                    <div style="margin-bottom: 10px; font-size: 9px; color: #ff5252; text-align: center;">
+                        <label style="cursor: pointer;"><input type="checkbox" data-bypass="reverb_2" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-items: center; width: 100%;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">TIME</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_4" data-param="time" data-value="0.5"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">DAMP</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_4" data-param="damp" data-value="0.2"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">SPREAD</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_4" data-param="spread" data-value="0.8"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">MIX</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_4" data-param="mix" data-value="0.4"></div></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_reverb_4_in"></div><div class="jack" id="jack_reverb_4_out"></div></div>
+                </div>
+
+                <div class="module mod-std brand-alum">
+                    <div class="screw tl"></div><div class="screw tr"></div>
+                    <div class="screw bl"></div><div class="screw br"></div>
+                    <div class="module-title" style="color: #00f2ff;">REVERB 5</div>
+                    <div style="margin-bottom: 10px; font-size: 9px; color: #ff5252; text-align: center;">
+                        <label style="cursor: pointer;"><input type="checkbox" data-bypass="reverb_2" onchange="window.salvarBypassModulo(this)"> BYPASS</label>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-items: center; width: 100%;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">TIME</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_5" data-param="time" data-value="0.5"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">DAMP</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_5" data-param="damp" data-value="0.2"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">SPREAD</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_5" data-param="spread" data-value="0.8"></div></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="label">MIX</div><div class="knob-bg"><div class="knob knob-inst" data-module="reverb_5" data-param="mix" data-value="0.4"></div></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: auto;"><div class="jack" id="jack_reverb_5_in"></div><div class="jack" id="jack_reverb_5_out"></div></div>
+                </div>
+                
+
+                <div class="module mod-double brand-milit" style="height: auto; min-height: 80px; flex-direction: column; align-items: stretch; padding: 15px 25px; border: 2px dashed #00f2ff; margin-bottom: 25px; background: #0a0a0c;">
                     <div class="screw tl"></div><div class="screw tr"></div>
                     <div class="screw bl"></div><div class="screw br"></div>
                     
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <span style="font-size: 1.5rem;">📸</span>
-                        <strong style="color: #fff; font-family: 'JetBrains Mono'; font-size: 1.1rem;">SNAPSHOTS MANAGER v1.0</strong>
-                    </div>
-                    
-                    <div style="display: flex; gap: 15px; align-items: center;">
-                        <input type="text" id="snap_name_input" placeholder="Ex: debaixo_dagua" style="background: #000; border: 2px solid #555; color: #fff; padding: 8px 15px; border-radius: 6px; font-family: 'JetBrains Mono'; font-size: 0.9rem;">
-                        <button class="btn-primary" onclick="window.salvarSnapshotMixer()" style="font-size: 0.8rem; padding: 8px 16px; border: 2px solid var(--primary);">💾 SALVAR ESTADO</button>
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px dashed #333; padding-bottom: 15px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 1.5rem;">📸</span>
+                            <strong style="color: #fff; font-family: 'Inter', sans-serif; font-size: 11px;">SNAPSHOTS v3.0</strong>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="snap_name_input" placeholder="Ex: cena_luta" style="width: 120px;">
+                            <button class="btn-primary" onclick="window.salvarSnapshotMixer()" style="background: var(--primary); color: #000; border: none; padding: 8px 12px; font-weight: bold; cursor: pointer; border-radius: 2px;">💾 SALVAR</button>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; align-items: center; border-left: 1px solid #555; padding-left: 15px;">
+                            <select id="snap_list_select" style="min-width: 100px;"><option value="default">default</option></select>
+                            
+                            <button class="btn-micro" onclick="window.apagarSnapshotMixer()" style="color: var(--danger); border-color: var(--danger); padding: 4px 6px;" title="Apagar Snapshot">🗑️</button>
+
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; background: #000; padding: 4px; border-radius: 4px; border: 1px solid #333;">
+                                <svg id="curve_display" width="40" height="20" style="background: #050506; border-radius: 2px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);"></svg>
+                                <select id="snap_curve" title="Curva de Transição" style="font-size: 9px; padding: 2px; width: 100%; text-align: center; border: none; background: transparent; color: #aaa;" onchange="window.desenharCurvaSnap()">
+                                    <option value="0">LIN</option><option value="1" selected>SIN</option><option value="4">QUAD</option>
+                                </select>
+                            </div>
+                            <button class="btn-secondary" onclick="window.testarSnapshotMixer()" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 8px 12px; cursor: pointer; border-radius: 2px;">▶ TEST</button>
+                        </div>
+
+                        
+                        
+                        <div style="border-left: 1px solid #555; padding-left: 15px;">
+                            <button onclick="window.testarNoGodot()" style="background: #25252b; color: #fff; border: 1px solid #444; padding: 8px 15px; cursor: pointer; border-radius: 2px; font-weight: bold; transition: 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='#444'">🚀 ENGINE PLAY</button>
+                        </div>
                     </div>
 
-                    <div style="display: flex; gap: 15px; align-items: center; border-left: 1px solid #555; padding-left: 20px;">
-                        <select id="snap_list_select" style="background: #000; border: 2px solid #555; color: #fff; padding: 8px; border-radius: 6px; font-family: 'JetBrains Mono'; font-size: 0.9rem; min-width: 180px;">
-                            <option value="default">default</option>
-                        </select>
-                        <button class="btn-secondary" onclick="window.testarSnapshotMixer()" style="font-size: 0.8rem; padding: 8px 16px; color: #81fe4e; border-color: #81fe4e; border-width: 2px;">▶ TESTAR CENÁRIO (2s)</button>
+                    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 8px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="color: #ffeb3b; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px;">🎞️ BANCO DE MACROS</span>
+                            </div>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <select id="macro_list_select" style="min-width: 130px; font-size: 9px;" onchange="window.carregarMacroSeq(this.value)">
+                                    <option value="default">Nova Trilha...</option>
+                                </select>
+                                <input type="text" id="macro_name_input" placeholder="Ex: boss_intro" style="width: 100px; font-size: 9px;">
+                                <button class="btn-micro" onclick="window.salvarMacroSeq()" style="background: #ffeb3b; color: #000; font-weight: bold;" title="Salvar Macro">💾</button>
+                                <button class="btn-micro" onclick="window.apagarMacroSeq()" style="color: var(--danger); border-color: var(--danger);" title="Apagar Macro">🗑️</button>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                            <button class="btn-micro" onclick="window.addSnapSeqStep()" style="border-color: #ffeb3b; color: #ffeb3b;">+ ADD SNAPSHOT (PASSO)</button>
+                            <button class="btn-micro" onclick="window.playSnapSequence()" style="background: transparent; color: #ffeb3b; border-color: #ffeb3b; font-weight: bold;">▶ TESTAR TRILHA ATUAL</button>
+                        </div>
+                        
+                        <div id="snap_seq_container" style="display: flex; flex-direction: column; gap: 5px; max-height: 150px; overflow-y: auto; background: #050505; border: 1px solid #222; border-radius: 4px; padding: 5px;">
+                            <div style="text-align: center; color: #555; font-size: 0.6rem; padding: 10px;">Nenhuma trilha montada. Adicione um passo.</div>
+                        </div>
                     </div>
                 </div>
 

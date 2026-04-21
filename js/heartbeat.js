@@ -77,6 +77,7 @@ window.conectarWebSocket = () => {
     };
 
     window.wsHeartBeat.onmessage = (event) => {
+        
         try {
             const parsed = JSON.parse(event.data);
 
@@ -87,9 +88,52 @@ window.conectarWebSocket = () => {
                 if (window.renderizarFileBrowser) window.renderizarFileBrowser();
             }
             if (parsed.type === "vu_meter") {
+
+                let maxVolume = -100;
+
                 for (const [bus, db] of Object.entries(parsed.data || {})) {
                     const bar = document.getElementById('vu_bar_' + bus);
-                    if (bar) bar.style.width = Math.min(100, Math.max(0, ((db + 60) / 60) * 100)) + '%';
+                    if (bar) {
+                        const val = Math.min(100, Math.max(0, ((db + 60) / 60) * 100));
+                        bar.style.width = val + '%';
+                    }
+                    if (db > maxVolume) maxVolume = db;
+                }
+
+                // 🚨 DEBUG 2: Vê qual foi o pico mais alto lido
+                console.log("🔊 MaxVolume (Engine):", maxVolume);
+
+                const needle = document.getElementById('comp_needle');
+                const threshKnob = document.querySelector('.knob-inst[data-module="compressor"][data-param="thresh"]');
+                const bypassChk = document.querySelector('input[data-bypass="compressor"]');
+                
+                if (needle && threshKnob) {
+                    needle.style.transition = "transform 0.05s ease-out, background 0.1s";
+
+                    let isBypassed = bypassChk ? bypassChk.checked : false;
+                    let threshVal = parseFloat(threshKnob.getAttribute('data-value') || 1.0);
+                    let threshDb = (threshVal * 60) - 60; 
+
+                    // 🚨 DEBUG 3: Compara os valores do Compressor
+                    console.log(`🎛️ Comp: Thresh Knob está em ${threshDb.toFixed(1)}dB | Bypass: ${isBypassed}`);
+
+                    if (!isBypassed && maxVolume > threshDb) {
+                        let excesso = maxVolume - threshDb; 
+                        let angle = -60 + Math.min(120, (excesso * 8)); 
+                        
+                        needle.style.transform = `rotate(${angle}deg)`;
+                        needle.style.background = "#fff"; 
+                        needle.style.boxShadow = "0 0 10px #fff";
+                    } else {
+                        needle.style.transform = `rotate(-60deg)`;
+                        needle.style.background = "#ff5252";
+                        needle.style.boxShadow = "0 0 5px #ff5252";
+                    }
+                }
+            }
+            if (parsed.type === "animate_ui_snapshot") {
+                if (window.animarFadersMotorizados) {
+                    window.animarFadersMotorizados(parsed.snapshot, parsed.fade_time, parsed.curve);
                 }
             }
         } catch(e) { console.error("Erro no processamento:", e); }
@@ -174,6 +218,7 @@ window.gerarSoundBankJSON = () => {
         let evtData = { "type": ev.type, "bus": ev.bus || "SFX", "base_volume_db": ev.base_volume_db || 0.0 };
         if (ev.ducking?.active) evtData.ducking = { "target": ev.ducking.target, "db_drop": ev.ducking.db_drop, "fade_time": ev.ducking.fade_time };
         if (ev.rtpc?.active) evtData.rtpc = { "param": ev.rtpc.param, "target": ev.rtpc.target, "in_min": ev.rtpc.in_min, "in_max": ev.rtpc.in_max, "out_min": ev.rtpc.out_min, "out_max": ev.rtpc.out_max };
+        if (ev.linked_macro && ev.linked_macro !== 'none') { evtData.linked_macro = ev.linked_macro; }
 
         if (ev.type === "music_dynamic") { evtData.bus = ev.bus || "Music"; evtData.parameter = "intensity"; evtData.layers = ev.audio_clips || []; }
         else if (ev.type === "sequence") { evtData.spatial = ev.spatial || "global"; evtData.max_distance = ev.max_distance || 2000; evtData.pitch_randomize = { "min": ev.pitch_min || 1.0, "max": ev.pitch_max || 1.0 }; evtData.sequence_steps = ev.sequence_steps || []; }
@@ -214,6 +259,7 @@ window.abrirEventoHeartBeat = (id) => {
     setVal('ev_max_dist', data.max_distance || 2000); setVal('ev_vol', data.base_volume_db || 0);
     setText('vol_val', (data.base_volume_db || 0) + ' dB'); setVal('ev_pan', data.pan || 0);
     setText('pan_val', (data.pan || 0) == 0 ? 'C' : (data.pan < 0 ? 'L '+Math.abs(data.pan) : 'R '+data.pan));
+    setVal('ev_linked_macro', data.linked_macro || 'none');
 
     window.renderizarClipsBuilder(data); window.mudarUIHeartBeat(); window.renderizarHeartBeatTree();
 };
@@ -222,6 +268,7 @@ window.salvarAlteracoesHeartBeat = () => {
     if (!window.hbAtualId) return; let evCache = window.hbEventsCache[window.hbAtualId]; if (!evCache) return;
     evCache.bus = getVal('ev_bus', 'Master'); evCache.spatial = getVal('ev_spatial', 'global');
     evCache.max_distance = getFloat('ev_max_dist', 2000); evCache.base_volume_db = getFloat('ev_vol', 0); evCache.pan = getFloat('ev_pan', 0);
+    evCache.linked_macro = getVal('ev_linked_macro', 'none');
 
     const typeInput = getVal('ev_type', 'sfx'); const nodes = document.querySelectorAll('#clips_builder_container .clip-node');
 
@@ -427,36 +474,153 @@ window.carregarUI_Mixer = () => {
 };
 
 window.cableSystem.eventsBound = window.cableSystem.eventsBound || false;
-window.initCableSystem = () => {
-    const rack = document.getElementById('eurorack_case'); const svg = document.getElementById('patch_cables_svg');
+// ==========================================
+// MODO FANTASMA DOS CABOS
+// ==========================================
+window.cablesGhostMode = false;
+window.toggleCablesVis = () => {
+    window.cablesGhostMode = !window.cablesGhostMode;
+    const svg = document.getElementById('patch_cables_svg');
+    if (svg) {
+        svg.style.transition = 'opacity 0.2s';
+        svg.style.opacity = window.cablesGhostMode ? '0.15' : '1';
+        // A Mágica: Permite que o mouse "atravesse" o cabo pra mexer no Knob embaixo dele
+        const paths = svg.querySelectorAll('path');
+        paths.forEach(p => p.style.pointerEvents = window.cablesGhostMode ? 'none' : 'auto');
+    }
+};
+
+// ==========================================
+// MOTOR DE CABOS (CLIQUE OU ARRASTE)
+// ==========================================
+window.cableSystem.pendingClickJack = null; // Guarda o primeiro buraco clicado
+
+window.renderizarConexoesHB = () => {
+    const svg = document.getElementById('patch_cables_svg'); 
+    const rack = document.getElementById('eurorack_case'); 
     if (!svg || !rack) return;
-    svg.setAttribute('width', rack.scrollWidth); svg.setAttribute('height', Math.max(rack.scrollHeight, rack.clientHeight)); window.renderizarConexoesHB();
+    
+    svg.innerHTML = ''; 
+    svg.setAttribute('height', Math.max(rack.scrollHeight, rack.clientHeight));
+    
+    window.hbMixerState.dsp_nodes.forEach((conn, idx) => {
+        const f = document.getElementById(conn.from), t = document.getElementById(conn.to);
+        if (f && t) {
+            const svgRect = svg.getBoundingClientRect(), r1 = f.getBoundingClientRect(), r2 = t.getBoundingClientRect();
+            const path = window.createCableElement(conn.color || '#ff5252');
+            window.updateCablePathSimple(path, r1.left + (r1.width / 2) - svgRect.left, r1.top + (r1.height / 2) - svgRect.top, r2.left + (r2.width / 2) - svgRect.left, r2.top + (r2.height / 2) - svgRect.top);
+            
+            // Respeita o modo fantasma ao redesenhar os cabos
+            path.style.pointerEvents = window.cablesGhostMode ? "none" : "auto"; 
+            path.style.cursor = "pointer";
+            path.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); if(confirm("Desconectar cabo?")) { window.hbMixerState.dsp_nodes.splice(idx, 1); window.salvarMixerHB(); window.renderizarConexoesHB(); } };
+            svg.appendChild(path);
+        }
+    });
+};
+
+window.initCableSystem = () => {
+    const rack = document.getElementById('eurorack_case'); 
+    const svg = document.getElementById('patch_cables_svg');
+    if (!svg || !rack) return;
+    
+    svg.setAttribute('width', rack.scrollWidth); 
+    svg.setAttribute('height', Math.max(rack.scrollHeight, rack.clientHeight)); 
+    window.renderizarConexoesHB();
 
     document.querySelectorAll('.jack').forEach(jack => {
-        const newJack = jack.cloneNode(true); jack.parentNode.replaceChild(newJack, jack);
+        const newJack = jack.cloneNode(true); 
+        jack.parentNode.replaceChild(newJack, jack);
+
         newJack.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return; e.preventDefault(); e.stopPropagation();
-            window.cableSystem.isDragging = true; window.cableSystem.startJack = newJack;
-            window.cableSystem.tempLine = window.createCableElement(window.cableSystem.colors[Math.floor(Math.random() * window.cableSystem.colors.length)]);
-            window.cableSystem.tempLine.style.pointerEvents = "none"; svg.appendChild(window.cableSystem.tempLine);
+            if (e.button !== 0) return; 
+            e.preventDefault(); e.stopPropagation();
+
+            window.cableSystem.isDragging = true; 
+            window.cableSystem.startJack = newJack;
+            window.cableSystem.startX = e.clientX;
+            window.cableSystem.startY = e.clientY;
+
+            window.cableSystem.tempLine = window.createCableElement(window.cableSystem.colors[Math.floor(Math.random() * window.cableSystem.colors.length)]); 
+            window.cableSystem.tempLine.style.pointerEvents = "none"; 
+            window.cableSystem.tempLine.style.display = "none"; // Esconde até o mouse mover de verdade
+            svg.appendChild(window.cableSystem.tempLine);
         });
     });
 
     if (!window.cableSystem.eventsBound) {
         window.cableSystem.eventsBound = true;
+        
         window.addEventListener('mousemove', (e) => {
             if (!window.cableSystem.isDragging || !window.cableSystem.tempLine || !window.cableSystem.startJack) return;
-            const svgRect = document.getElementById('patch_cables_svg').getBoundingClientRect(), jackRect = window.cableSystem.startJack.getBoundingClientRect();
+            
+            // Só exibe a linha solta se o cara mover o mouse (diferencia clique puro de arraste)
+            const dist = Math.hypot(e.clientX - window.cableSystem.startX, e.clientY - window.cableSystem.startY);
+            if (dist > 5) window.cableSystem.tempLine.style.display = "block";
+
+            const svgRect = document.getElementById('patch_cables_svg').getBoundingClientRect();
+            const jackRect = window.cableSystem.startJack.getBoundingClientRect();
             window.updateCablePathSimple(window.cableSystem.tempLine, jackRect.left + (jackRect.width / 2) - svgRect.left, jackRect.top + (jackRect.height / 2) - svgRect.top, e.clientX - svgRect.left, e.clientY - svgRect.top);
         });
+        
         window.addEventListener('mouseup', (e) => {
-            if (!window.cableSystem.isDragging) return; const target = e.target.closest('.jack');
-            if (target && window.cableSystem.startJack && target.id !== window.cableSystem.startJack.id) {
-                window.hbMixerState.dsp_nodes.push({ from: window.cableSystem.startJack.id, to: target.id, color: window.cableSystem.tempLine.getAttribute('stroke') });
-                window.salvarMixerHB(); window.renderizarConexoesHB();
+            if (!window.cableSystem.isDragging) return; 
+            
+            const dist = Math.hypot(e.clientX - window.cableSystem.startX, e.clientY - window.cableSystem.startY);
+            const target = e.target.closest('.jack');
+
+            if (dist < 5) {
+                // 🚨 O USUÁRIO APENAS CLICOU!
+                const clickedJack = window.cableSystem.startJack;
+
+                if (window.cableSystem.pendingClickJack) {
+                    if (window.cableSystem.pendingClickJack.id !== clickedJack.id) {
+                        // Conecta os dois pontos clicados!
+                        window.hbMixerState.dsp_nodes.push({
+                            from: window.cableSystem.pendingClickJack.id,
+                            to: clickedJack.id,
+                            color: window.cableSystem.tempLine ? window.cableSystem.tempLine.getAttribute('stroke') : '#00f2ff'
+                        });
+                        window.salvarMixerHB(); 
+                        window.renderizarConexoesHB();
+                    }
+                    // Limpa a seleção e tira o Neon
+                    window.cableSystem.pendingClickJack.style.borderColor = "";
+                    window.cableSystem.pendingClickJack.style.boxShadow = "";
+                    window.cableSystem.pendingClickJack = null;
+                } else {
+                    // Primeiro clique: Acende o buraco e aguarda o segundo
+                    window.cableSystem.pendingClickJack = clickedJack;
+                    clickedJack.style.borderColor = "var(--primary)";
+                    clickedJack.style.boxShadow = "inset 0 0 15px var(--primary), 0 0 10px var(--primary)";
+                }
+            } else {
+                // 🚨 O USUÁRIO ARRASTOU O CABO!
+                if (target && window.cableSystem.startJack && target.id !== window.cableSystem.startJack.id) {
+                    window.hbMixerState.dsp_nodes.push({ from: window.cableSystem.startJack.id, to: target.id, color: window.cableSystem.tempLine.getAttribute('stroke') });
+                    window.salvarMixerHB(); window.renderizarConexoesHB();
+                }
+                // Se arrastou, cancela o modo clique
+                if (window.cableSystem.pendingClickJack) {
+                    window.cableSystem.pendingClickJack.style.borderColor = "";
+                    window.cableSystem.pendingClickJack.style.boxShadow = "";
+                    window.cableSystem.pendingClickJack = null;
+                }
             }
+
             if (window.cableSystem.tempLine) window.cableSystem.tempLine.remove();
-            window.cableSystem.isDragging = false; window.cableSystem.tempLine = null; window.cableSystem.startJack = null;
+            window.cableSystem.isDragging = false; 
+            window.cableSystem.tempLine = null; 
+            window.cableSystem.startJack = null;
+        });
+
+        // Se o cara clicar no espaço vazio de madeira da rack, cancela o cabo pendente
+        window.addEventListener('mousedown', (e) => {
+           if (window.cableSystem.pendingClickJack && !e.target.closest('.jack')) {
+               window.cableSystem.pendingClickJack.style.borderColor = "";
+               window.cableSystem.pendingClickJack.style.boxShadow = "";
+               window.cableSystem.pendingClickJack = null;
+           }
         });
     }
 };
@@ -464,21 +628,6 @@ window.initCableSystem = () => {
 window.createCableElement = (c) => { const p = document.createElementNS("http://www.w3.org/2000/svg", "path"); p.setAttribute("stroke", c); p.setAttribute("stroke-width", "8"); p.setAttribute("fill", "none"); p.setAttribute("stroke-linecap", "round"); p.style.filter = "drop-shadow(0 15px 10px rgba(0,0,0,0.7))"; return p; };
 window.updateCablePathSimple = (p, x1, y1, x2, y2) => { const sag = 60 + (Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)) * 0.4); p.setAttribute("d", `M ${x1} ${y1} C ${x1} ${y1 + sag}, ${x2} ${y2 + sag}, ${x2} ${y2}`); };
 
-window.renderizarConexoesHB = () => {
-    const svg = document.getElementById('patch_cables_svg'); const rack = document.getElementById('eurorack_case'); if (!svg || !rack) return;
-    svg.innerHTML = ''; svg.setAttribute('height', Math.max(rack.scrollHeight, rack.clientHeight));
-    window.hbMixerState.dsp_nodes.forEach((conn, idx) => {
-        const f = document.getElementById(conn.from), t = document.getElementById(conn.to);
-        if (f && t) {
-            const svgRect = svg.getBoundingClientRect(), r1 = f.getBoundingClientRect(), r2 = t.getBoundingClientRect();
-            const path = window.createCableElement(conn.color || '#ff5252');
-            window.updateCablePathSimple(path, r1.left + (r1.width / 2) - svgRect.left, r1.top + (r1.height / 2) - svgRect.top, r2.left + (r2.width / 2) - svgRect.left, r2.top + (r2.height / 2) - svgRect.top);
-            path.style.pointerEvents = "auto"; path.style.cursor = "pointer";
-            path.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); if(confirm("Desconectar cabo?")) { window.hbMixerState.dsp_nodes.splice(idx, 1); window.salvarMixerHB(); window.renderizarConexoesHB(); } };
-            svg.appendChild(path);
-        }
-    });
-};
 
 window.knobSystem.eventsBound = window.knobSystem.eventsBound || false;
 window.updateKnobRotation = (knob, value) => { knob.style.transform = `rotate(${-135 + (value * 270)}deg)`; };
@@ -687,9 +836,7 @@ window.togglePlayPreview = async () => {
 };
 
 window.pararPreview = () => {
-    if (!window.playerSystem) return; window.playerSystem.tracks.forEach(t => t.pause()); window.playerSystem.isPlaying = false;
-    const btn = document.getElementById('btn_play_preview'); if (btn) { btn.innerText = "▶ TOCAR NO NAVEGADOR"; btn.style.background = "#2a2a32"; btn.style.color = "var(--primary)"; }
-};
+  if (!window.playerSystem) return; window.playerSystem.tracks.forEach(t => t.pause()); window.playerSystem.isPlaying = false;};
 
 // ==========================================
 // MATA TODO O ÁUDIO (LOCAL E ENGINE)
@@ -720,15 +867,33 @@ window.salvarSnapshotMixer = () => {
 window.atualizarListaSnapshots = () => { const select = document.getElementById('snap_list_select'); if(!select || !window.hbMixerState.snapshots) return; const snaps = Object.keys(window.hbMixerState.snapshots); if (snaps.length > 0) { const valorAtual = select.value; select.innerHTML = snaps.map(k => `<option value="${k}">${k}</option>`).join(''); if (snaps.includes(valorAtual)) select.value = valorAtual; } };
 
 window.testarSnapshotMixer = () => {
-    const name = document.getElementById('snap_list_select').value, snapData = window.hbMixerState.snapshots[name]; if (!snapData) return;
-    if (snapData.dsp_nodes) { window.hbMixerState.dsp_nodes = JSON.parse(JSON.stringify(snapData.dsp_nodes)); if (typeof window.renderizarConexoesHB === 'function') window.renderizarConexoesHB(); }
-    if (window.wsHeartBeat?.readyState === WebSocket.OPEN) window.wsHeartBeat.send(JSON.stringify({ type: "test_snapshot", snapshot: name, fade_time: 2.0 }));
-    if (snapData.buses) Object.keys(snapData.buses).forEach(bus => { const val = snapData.buses[bus]; const input = document.getElementById('mix_vol_' + bus), label = document.getElementById('mix_lbl_' + bus); if (input) input.value = val; if (label) label.innerText = val.toFixed(1) + ' dB'; window.hbMixerState.buses[bus] = val; });
-    if (snapData.modules) Object.keys(snapData.modules).forEach(mod => { const modData = snapData.modules[mod]; Object.keys(modData).forEach(param => { if (param === 'bypass') { const chk = document.querySelector(`input[data-bypass="${mod}"]`); if (chk) chk.checked = modData[param]; } else { const knob = document.querySelector(`.knob-inst[data-module="${mod}"][data-param="${param}"]`), fader = document.querySelector(`.eq-fader[data-module="${mod}"][data-param="${param}"]`); const val = modData[param]; if (knob) { knob.setAttribute('data-value', val); window.updateKnobRotation(knob, val); } if (fader) fader.value = val; } }); window.hbMixerState.modules[mod] = JSON.parse(JSON.stringify(modData)); });
-    window.salvarBancoLocal();
+    const name = document.getElementById('snap_list_select').value;
+    const curveValue = parseInt(document.getElementById('snap_curve').value || "1");
+    
+    // Agora o site APENAS dá a ordem. A animação visual será engatilhada 
+    // pelo retorno do Godot para manter tudo 100% em sincronia.
+    if (window.wsHeartBeat && window.wsHeartBeat.readyState === WebSocket.OPEN) {
+        window.wsHeartBeat.send(JSON.stringify({
+            type: "test_snapshot",
+            snapshot: name,
+            fade_time: 2.0,
+            curve: curveValue
+        }));
+    }
 };
 
-window.salvarLfoModulator = () => { if (!window.hbMixerState.lfo) window.hbMixerState.lfo = {}; window.hbMixerState.lfo = { target: document.getElementById('lfo_target').value, rate: parseFloat(document.getElementById('lfo_rate').value), depth: parseFloat(document.getElementById('lfo_depth').value) }; window.sincronizarMixer(); clearTimeout(window.hbTimeout); window.hbTimeout = setTimeout(() => window.salvarBancoLocal(), 1000); };
+window.salvarLfoModulator = () => {
+    if (!window.hbMixerState.lfo) window.hbMixerState.lfo = {};
+    window.hbMixerState.lfo = {
+        target: document.getElementById('lfo_target').value,
+        wave: document.getElementById('lfo_wave').value, // Salva o tipo de onda
+        rate: parseFloat(document.getElementById('lfo_rate').value),
+        depth: parseFloat(document.getElementById('lfo_depth').value)
+    };
+    window.sincronizarMixer();
+    clearTimeout(window.hbTimeout);
+    window.hbTimeout = setTimeout(() => window.salvarBancoLocal(), 1000);
+};
 
 window.itemContextoAtual = null;
 window.abrirMenuContexto = (e, id, type) => { e.preventDefault(); e.stopPropagation(); window.itemContextoAtual = { id, type }; const menu = document.getElementById('context-menu'); menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px'; };
@@ -769,3 +934,313 @@ setTimeout(() => {
 
 window.enviarDadosTotais = () => { window.sincronizarBank(); window.sincronizarMixer(); window.mostrarToastNotificacao("Sucesso", "✅ Sincronização total concluída!", "geral"); };
 window.resyncEngine = () => { if (typeof window.mostrarToastNotificacao === 'function') window.mostrarToastNotificacao("Sistema", "🔄 Ressincronizando com o Godot...", "geral"); window.conectarWebSocket(); setTimeout(() => { if (window.wsHeartBeat?.readyState === WebSocket.OPEN) { window.sincronizarBank(); window.sincronizarMixer(); if (typeof window.mostrarToastNotificacao === 'function') window.mostrarToastNotificacao("Sucesso", "✅ Sincronização total concluída!", "geral"); } }, 500); };
+
+// ==========================================
+// RENDERIZADOR DE CURVAS (SNAPSHOTS)
+// ==========================================
+window.desenharCurvaSnap = () => {
+    const svg = document.getElementById('curve_display');
+    const curveType = document.getElementById('snap_curve').value;
+    if (!svg) return;
+    
+    const width = 50;
+    const height = 25;
+    const steps = 25; // Resolução da linha
+    
+    // Começa no canto inferior esquerdo
+    let pathD = `M 0 ${height} `;
+    
+    for (let i = 0; i <= steps; i++) {
+        let t = i / steps; // Tempo normalizado (0 a 1)
+        let y = t;         // Por padrão, curva Linear (0)
+        
+        // Simulação matemática das curvas EASE_IN_OUT do Godot
+        if (curveType === "1") { 
+            // TRANS_SINE
+            y = -(Math.cos(Math.PI * t) - 1) / 2;
+        } else if (curveType === "4") { 
+            // TRANS_QUAD
+            y = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        }
+        
+        let svgX = t * width;
+        let svgY = height - (y * height); // Inverte o Y porque no SVG o 0 é no topo
+        
+        pathD += `L ${svgX.toFixed(1)} ${svgY.toFixed(1)} `;
+    }
+    
+    // Injeta a linha neon brilhante
+    svg.innerHTML = `
+        <line x1="0" y1="12.5" x2="50" y2="12.5" stroke="#333" stroke-dasharray="2,2" stroke-width="1" />
+        <line x1="25" y1="0" x2="25" y2="25" stroke="#333" stroke-dasharray="2,2" stroke-width="1" />
+        <path d="${pathD}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" style="filter: drop-shadow(0 0 3px var(--primary));"/>
+    `;
+};
+
+// Força o desenho inicial quando a página carregar
+setTimeout(() => { if(window.desenharCurvaSnap) window.desenharCurvaSnap(); }, 1000);
+
+// ==========================================
+// MACRO SEQUENCER (TRILHAS DE SNAPSHOT)
+// ==========================================
+// ==========================================
+// GERENCIADOR DE BANCO DE MACROS
+// ==========================================
+window.hbSnapshotSequence = [];
+if (!window.hbMixerState.macros) window.hbMixerState.macros = {};
+
+// Quando o mixer carregar, atualizamos os menus suspensos
+const oldCarregarUIMixer = window.carregarUI_Mixer;
+window.carregarUI_Mixer = () => {
+    if (oldCarregarUIMixer) oldCarregarUIMixer();
+    window.atualizarListaMacros();
+};
+
+window.atualizarListaMacros = () => {
+    const select = document.getElementById('macro_list_select');
+    const linkSelect = document.getElementById('ev_linked_macro');
+    if (!select || !linkSelect) return;
+    
+    const macros = Object.keys(window.hbMixerState.macros || {});
+    
+    // Atualiza o Rack
+    const currentVal = select.value;
+    select.innerHTML = `<option value="default">Nova Trilha...</option>` + macros.map(k => `<option value="${k}">${k}</option>`).join('');
+    if (macros.includes(currentVal)) select.value = currentVal;
+    
+    // Atualiza o Inspector (Vínculo com Eventos)
+    const currentLink = linkSelect.value;
+    linkSelect.innerHTML = `<option value="none">Nenhum</option>` + macros.map(k => `<option value="${k}">${k}</option>`).join('');
+    if (macros.includes(currentLink) || currentLink === 'none') linkSelect.value = currentLink;
+};
+
+window.salvarMacroSeq = () => {
+    const name = document.getElementById('macro_name_input').value.trim();
+    if (!name) return alert("Digite um nome para a trilha/macro!");
+    if (window.hbSnapshotSequence.length === 0) return alert("Adicione pelo menos um passo na trilha!");
+    
+    if (!window.hbMixerState.macros) window.hbMixerState.macros = {};
+    window.hbMixerState.macros[name] = JSON.parse(JSON.stringify(window.hbSnapshotSequence));
+    
+    window.atualizarListaMacros();
+    document.getElementById('macro_list_select').value = name;
+    window.sincronizarMixer();
+    window.salvarBancoLocal();
+    window.mostrarToastNotificacao("Macro", `💾 Trilha Macro '${name}' salva!`, "geral");
+};
+
+window.carregarMacroSeq = (name) => {
+    if (name === 'default' || !window.hbMixerState.macros[name]) {
+        window.hbSnapshotSequence = [];
+        document.getElementById('macro_name_input').value = "";
+    } else {
+        window.hbSnapshotSequence = JSON.parse(JSON.stringify(window.hbMixerState.macros[name]));
+        document.getElementById('macro_name_input').value = name;
+    }
+    window.renderSnapSeq();
+};
+
+window.apagarMacroSeq = () => {
+    const name = document.getElementById('macro_list_select').value;
+    if (name === 'default') return;
+    
+    if (confirm(`Apagar o Macro '${name}'? Eventos que dependam dele perderão a automação.`)) {
+        delete window.hbMixerState.macros[name];
+        window.atualizarListaMacros();
+        window.carregarMacroSeq('default');
+        window.sincronizarMixer();
+        window.salvarBancoLocal();
+        window.mostrarToastNotificacao("Macro", `🗑️ Trilha Macro '${name}' apagada!`, "geral");
+    }
+};
+
+// Patcheamos a função de atualizar snaps para atualizar a trilha também
+const oldAtualizarListaSnap = window.atualizarListaSnapshots;
+window.atualizarListaSnapshots = () => {
+    if (oldAtualizarListaSnap) oldAtualizarListaSnap();
+    if (window.renderSnapSeq) window.renderSnapSeq();
+};
+
+window.addSnapSeqStep = () => {
+    const snaps = Object.keys(window.hbMixerState.snapshots || {});
+    if (snaps.length === 0) {
+        alert("Crie um snapshot e clique em 'SALVAR' primeiro!");
+        return;
+    }
+    window.hbSnapshotSequence.push({
+        id: Date.now().toString(),
+        snap: snaps[0],
+        fade: 2.0,   // Tempo rodando o crossfade
+        hold: 1.0,   // Tempo aguardando o próximo passo após o fade acabar
+        curve: 1     // 1 = SIN
+    });
+    window.renderSnapSeq();
+};
+
+window.renderSnapSeq = () => {
+    const container = document.getElementById('snap_seq_container');
+    if (window.hbSnapshotSequence.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #555; font-size: 0.6rem; padding: 10px;">Nenhuma trilha montada. Adicione um passo.</div>';
+        return;
+    }
+
+    const snaps = Object.keys(window.hbMixerState.snapshots || {});
+    container.innerHTML = window.hbSnapshotSequence.map((step, index) => `
+        <div style="display: flex; gap: 10px; align-items: center; background: #111; border: 1px solid #333; padding: 6px; border-radius: 3px;">
+            <span style="color: #666; font-weight: bold; width: 15px; font-size: 0.65rem;">${index+1}.</span>
+            <select class="seq-snap prop-input" data-id="${step.id}" onchange="window.updateSnapSeq()" style="flex: 1; padding: 4px;">
+                ${snaps.map(s => `<option value="${s}" ${s===step.snap ? 'selected':''}>${s}</option>`).join('')}
+            </select>
+            <div style="display: flex; flex-direction: column; align-items: center; width: 50px;">
+                <span style="font-size: 0.5rem; color:#888;">FADE (s)</span>
+                <input type="number" class="seq-fade prop-input" data-id="${step.id}" value="${step.fade}" step="0.1" style="width: 100%; padding: 4px; text-align: center;" onchange="window.updateSnapSeq()">
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; width: 50px;">
+                <span style="font-size: 0.5rem; color:#888;">HOLD (s)</span>
+                <input type="number" class="seq-hold prop-input" data-id="${step.id}" value="${step.hold}" step="0.1" style="width: 100%; padding: 4px; text-align: center;" onchange="window.updateSnapSeq()">
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; width: 60px;">
+                <span style="font-size: 0.5rem; color:#888;">CURVA</span>
+                <select class="seq-curve prop-input" data-id="${step.id}" onchange="window.updateSnapSeq()" style="width: 100%; padding: 4px;">
+                    <option value="0" ${step.curve==0?'selected':''}>LIN</option>
+                    <option value="1" ${step.curve==1?'selected':''}>SIN</option>
+                    <option value="4" ${step.curve==4?'selected':''}>QUAD</option>
+                </select>
+            </div>
+            <button class="btn-micro" style="color: #ff5252; border-color: #ff5252; margin-left: 5px;" onclick="window.removeSnapSeqStep('${step.id}')">✖</button>
+        </div>
+    `).join('');
+};
+
+window.updateSnapSeq = () => {
+    window.hbSnapshotSequence.forEach(step => {
+        const snapEl = document.querySelector(`.seq-snap[data-id="${step.id}"]`);
+        const fadeEl = document.querySelector(`.seq-fade[data-id="${step.id}"]`);
+        const holdEl = document.querySelector(`.seq-hold[data-id="${step.id}"]`);
+        const curveEl = document.querySelector(`.seq-curve[data-id="${step.id}"]`);
+        if(snapEl) step.snap = snapEl.value;
+        if(fadeEl) step.fade = parseFloat(fadeEl.value) || 0;
+        if(holdEl) step.hold = parseFloat(holdEl.value) || 0;
+        if(curveEl) step.curve = parseInt(curveEl.value) || 1;
+    });
+};
+
+window.removeSnapSeqStep = (id) => {
+    window.hbSnapshotSequence = window.hbSnapshotSequence.filter(s => s.id !== id);
+    window.renderSnapSeq();
+};
+
+window.playSnapSequence = () => {
+    if (window.hbSnapshotSequence.length === 0) return;
+    if (window.wsHeartBeat && window.wsHeartBeat.readyState === WebSocket.OPEN) {
+        window.wsHeartBeat.send(JSON.stringify({
+            type: "play_snap_sequence",
+            sequence: window.hbSnapshotSequence
+        }));
+        window.mostrarToastNotificacao("Macro", "🎞️ Trilha de Snapshots iniciada na Engine!", "geral");
+    }
+};
+
+// ==========================================
+// EFEITO VISUAL DE FADERS MOTORIZADOS
+// ==========================================
+window.animarFadersMotorizados = (snapName, fadeTime, curveType) => {
+    const targetSnap = window.hbMixerState.snapshots[snapName];
+    if (!targetSnap) return;
+
+    // 1. Atualiza os cabos (DSP Nodes) instantaneamente
+    if (targetSnap.dsp_nodes) {
+        window.hbMixerState.dsp_nodes = JSON.parse(JSON.stringify(targetSnap.dsp_nodes));
+        if (typeof window.renderizarConexoesHB === 'function') window.renderizarConexoesHB();
+    }
+
+    // 2. Captura de onde os botões estão partindo
+    const startBuses = JSON.parse(JSON.stringify(window.hbMixerState.buses || {}));
+    const startMods = JSON.parse(JSON.stringify(window.hbMixerState.modules || {}));
+    const targetBuses = targetSnap.buses || {};
+    const targetMods = targetSnap.modules || {};
+
+    const startTime = performance.now();
+    const durationMs = fadeTime * 1000;
+
+    function animate(time) {
+        let elapsed = time - startTime;
+        let t = durationMs > 0 ? Math.min(1.0, elapsed / durationMs) : 1.0;
+
+        // Reproduz a matemática da curva do Godot no Javascript
+        let weight = t; // LIN
+        if (curveType === 1) weight = -(Math.cos(Math.PI * t) - 1) / 2; // SIN
+        else if (curveType === 4) weight = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // QUAD
+
+        // Gira os volumes do Mixer Principal
+        for (const bus in targetBuses) {
+            const sVal = startBuses[bus] !== undefined ? startBuses[bus] : 0;
+            const currentVal = sVal + (targetBuses[bus] - sVal) * weight;
+            window.hbMixerState.buses[bus] = currentVal;
+            
+            const input = document.getElementById('mix_vol_' + bus);
+            const label = document.getElementById('mix_lbl_' + bus);
+            if (input) input.value = currentVal;
+            if (label) label.innerText = currentVal.toFixed(1) + ' dB';
+        }
+
+        // Gira todos os Knobs de Efeitos
+        for (const mod in targetMods) {
+            if (!window.hbMixerState.modules[mod]) window.hbMixerState.modules[mod] = {};
+            
+            for (const param in targetMods[mod]) {
+                const targetVal = targetMods[mod][param];
+                
+                // Botão Bypass muda instantaneamente, não faz sentido animar
+                if (param === 'bypass') {
+                    if (t === 1.0) {
+                        const chk = document.querySelector(`input[data-bypass="${mod}"]`);
+                        if (chk) chk.checked = targetVal;
+                        window.hbMixerState.modules[mod][param] = targetVal;
+                    }
+                    continue;
+                }
+
+                // Interpolação do valor do Knob/Fader
+                const sVal = (startMods[mod] && startMods[mod][param] !== undefined) ? startMods[mod][param] : targetVal;
+                const currentVal = sVal + (targetVal - sVal) * weight;
+                window.hbMixerState.modules[mod][param] = currentVal;
+
+                const knob = document.querySelector(`.knob-inst[data-module="${mod}"][data-param="${param}"]`);
+                const fader = document.querySelector(`.eq-fader[data-module="${mod}"][data-param="${param}"]`);
+
+                if (knob) {
+                    knob.setAttribute('data-value', currentVal);
+                    knob.value = currentVal; 
+                    window.updateKnobRotation(knob, currentVal); // O giro visual mágico!
+                }
+                if (fader) fader.value = currentVal;
+            }
+        }
+
+        // Continua a animação até acabar o tempo
+        if (t < 1.0) requestAnimationFrame(animate);
+    }
+    
+    // Dá a largada na animação
+    requestAnimationFrame(animate);
+};
+
+window.apagarSnapshotMixer = () => {
+    const select = document.getElementById('snap_list_select');
+    if (!select) return;
+    const name = select.value;
+    
+    if (name === 'default') {
+        alert("O snapshot 'default' não pode ser apagado, ele é a base do sistema.");
+        return;
+    }
+    
+    if (confirm(`Tem certeza que deseja apagar o snapshot '${name}'? Isso pode quebrar macros que dependam dele.`)) {
+        delete window.hbMixerState.snapshots[name];
+        window.atualizarListaSnapshots();
+        window.sincronizarMixer();
+        window.salvarBancoLocal();
+        window.mostrarToastNotificacao("Mixer", `🗑️ Snapshot '${name}' apagado!`, "geral");
+    }
+};
